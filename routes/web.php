@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+
+    Route::controller(CompanyController::class)->group(function () {
+        Route::get('/company', 'index')->name('company.index');
+        // Route::get('/customer-message/{id}', 'show')->name('show_message');
+        // Route::put('/customer-message/{id}', 'reply')->name('reply_message');
+        // Route::delete('/customer-message/{id}', 'destroy')->name('destroy_message');
+    });
 });
 
 
@@ -46,4 +55,4 @@ Route::get('/uikit/button', function () {
 
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
