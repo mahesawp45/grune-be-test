@@ -10,9 +10,6 @@ import {
 import PrimaryButton from "./PrimaryButton";
 
 const PrimaryTable = ({
-    title,
-    mainActionTitle,
-    mainActionOnClick,
     actions,
     filters,
     onFilterReset,
@@ -67,14 +64,8 @@ const PrimaryTable = ({
             style={{ boxShadow: "0 0px 5px rgba(209, 213, 219, 0.6)" }}
         >
             <div className="p-8 flex flex-row justify-between w-full items-center border-b border-gray-300 space-x-10">
-                <h2 className="font-bold">{title}</h2>
                 <div className="flex flex-row justify-end items-center space-x-4 w-full">
                     {actions}
-                    {mainActionOnClick ? (
-                        <PrimaryButton onClick={() => {}}>
-                            Add Company
-                        </PrimaryButton>
-                    ) : null}
                 </div>
                 {/* <PrimaryButton onClick={() => {}}>Add Company</PrimaryButton> */}
             </div>

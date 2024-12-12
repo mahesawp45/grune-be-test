@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PostCode;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PostCodeController extends Controller
 {
@@ -62,5 +63,19 @@ class PostCodeController extends Controller
     public function destroy(PostCode $postCode)
     {
         //
+    }
+
+    public function search(Request $request)
+    {
+        // Get the input from the request
+        $postcode = $request->input('postcode');
+
+
+        $postcodes = PostCode::where('postcode', 'like', '%' . $postcode . '%')->get();
+
+        return response()->json([
+            'issuccess' => true,
+            'data' => $postcodes,
+        ]);
     }
 }

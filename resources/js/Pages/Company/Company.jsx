@@ -68,7 +68,6 @@ const Company = () => {
                 <h1 className="font-bold text-xl">Company</h1>
                 <PrimaryTable
                     title="Companies"
-                    mainActionTitle="Add Company"
                     // onFilterReset={() => {}}
                     // filters={
                     //   <div className="mt-4 sm:mt-0 sm:flex-none flex flex-row space-x-2 items-center lg:w-8/12 w-full">
@@ -95,7 +94,16 @@ const Company = () => {
                     //     />
                     //   </div>
                     // }
-                    mainActionOnClick={() => {}}
+                    actions={
+                        <div className="flex flex-row w-full justify-end">
+                            <a
+                                href={route("company.create")}
+                                className="bg-gray-800 border inline-flex border-transparent rounded-md font-medium  text-white capitalize tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 p-3 "
+                            >
+                                Add Company
+                            </a>
+                        </div>
+                    }
                     columns={columns}
                     data={[]}
                     isLoading={false}
