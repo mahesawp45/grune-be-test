@@ -68,14 +68,15 @@ class PostCodeController extends Controller
     public function search(Request $request)
     {
         // Get the input from the request
-        $postcode = $request->input('postcode');
 
+        $postcode = $request->query('postcode');
 
         $postcodes = PostCode::where('postcode', 'like', '%' . $postcode . '%')->get();
 
         return response()->json([
             'issuccess' => true,
             'data' => $postcodes,
+            'message' => "Success",
         ]);
     }
 }

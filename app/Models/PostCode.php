@@ -14,7 +14,7 @@ class PostCode extends Model
      *
      * @var string
      */
-    protected $table = 'post_codes';
+    protected $table = 'postcodes';
 
     /**
      * The attributes that are mass assignable.

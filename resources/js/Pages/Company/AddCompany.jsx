@@ -4,24 +4,18 @@ import PrimaryButton from "@/Components/PrimaryButton";
 import Layout from "@/Layouts/layout/layout";
 import { useForm } from "@inertiajs/react";
 import { InputText } from "primereact/inputtext";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
+import api from "@/config/api/api";
 
 const AddCompany = () => {
     const [loading, setLoading] = useState(false);
     const [postcode, setPostcode] = useState({ postcode: "" });
     const [postcodes, setPostcodes] = useState([]);
+    const [prefectureOptions, setPrefectureOptions] = useState([]);
 
-    const {
-        data,
-        setData,
-        errors,
-        post,
-        reset,
-        processing,
-        recentlySuccessful,
-    } = useForm({
+    const [form, setForm] = useState({
         name: "",
         email: "",
         postcode: "",
@@ -38,39 +32,98 @@ const AddCompany = () => {
         image: null,
     });
 
-    const prefectureOptions = [
-        { label: "Hokkaido", value: 1 },
-        { label: "Aomori", value: 2 },
-        { label: "Iwate", value: 3 },
-        // Add more prefecture options here
-    ];
+    const {
+        data,
+        setData,
+        errors,
+        setDefaults,
+        post,
+        reset,
+        processing,
+        recentlySuccessful,
+    } = useForm(form);
 
-    const handleSearch = (e) => {
-        e.preventDefault(); // Prevent the default form submission
+    // Memoized search postcodes to prevent unnecessary recreations
+    const handleSearch = useCallback(
+        async (e) => {
+            e.preventDefault();
+            setLoading(true);
+
+            // Only proceed if postcode is not empty
+            if (!postcode.postcode.trim()) {
+                // Optionally show an error message
+                alert("Please enter a postcode");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await api.get(route("search"), {
+                    params: postcode,
+                });
+
+                // automatically set prefecture_id, city and local when the response froms searching the postcode is single
+                if (response.data.data.length == 1) {
+                    const result = response.data.data[0];
+                    await handleGetPrefectureByName(result.prefecture);
+                    setForm({
+                        ...form,
+                        city: result.city,
+                        local: result.local,
+                    });
+                }
+
+                setPostcodes(response.data.data);
+                setLoading(false);
+            } catch (error) {
+                console.log("====================================");
+                console.log("ERROR SEARCH POSTCODE ==> ", error);
+                console.log("====================================");
+                setLoading(false);
+            }
+        },
+        [postcode.postcode]
+    );
+
+    // Memoized search prefectures to prevent unnecessary recreations
+    const handleGetPrefectureByName = useCallback(async (prefectureName) => {
         setLoading(true);
 
-        get(
-            route("search"), // This route name
-            { postcode: postcode }, // Pass the postcode as query params
-            {
-                only: ["data"], // Only return the `data` key in the response
-                onSuccess: (page) => {
-                    setPostcodes(page.props.data); // Set the postcodes data
-                    setLoading(false);
-                },
-                onError: (e) => {
-                    console.log("====================================");
-                    console.log("ERRRP ---> ", e);
-                    console.log("====================================");
-                    setPostcodes([]);
-                    setLoading(false);
-                },
+        try {
+            const response = await api.get(route("getOneByName"), {
+                params: { prefecture: prefectureName },
+            });
+
+            // automatically set prefecture_id
+            if (response.data.data) {
+                const result = response.data.data;
+                setPrefectureOptions(
+                    [...prefectureOptions].concat({
+                        label: result.display_name,
+                        value: result.id,
+                    })
+                );
+                // setData("prefecture_id", result.id);
+                setForm({
+                    ...form,
+                    prefecture_id: result.id,
+                });
             }
-        );
-    };
+
+            setLoading(false);
+        } catch (error) {
+            console.log("====================================");
+            console.log("ERROR GET PREFECTURE BY NAME ==> ", error);
+            console.log("====================================");
+            setLoading(false);
+        }
+    }, []);
 
     const handleSubmit = (e) => {
-        // e.preventDefault();
+        e.preventDefault();
+        console.log("====================================");
+        console.log("FORM DATYA ---> ", form);
+        console.log("====================================");
         // post(route("company.store"), {
         //     preserveScroll: true,
         //     onSuccess: () => reset(),
@@ -96,8 +149,11 @@ const AddCompany = () => {
                             id="name"
                             placeholder="Company Name"
                             className="w-full"
-                            value={data.name}
-                            onChange={(e) => setData("name", e.target.value)}
+                            value={form.name}
+                            onChange={(e) => {
+                                // setData("name", e.target.value);
+                                setForm({ ...form, name: e.target.value });
+                            }}
                         />
                         <InputError message={errors.name} />
                     </div>
@@ -108,8 +164,11 @@ const AddCompany = () => {
                             id="email"
                             placeholder="email@company.com"
                             className="w-full"
-                            value={data.email}
-                            onChange={(e) => setData("email", e.target.value)}
+                            value={form.email}
+                            onChange={(e) => {
+                                // setData("email", e.target.value)
+                                setForm({ ...form, email: e.target.value });
+                            }}
                         />
                         <InputError message={errors.email} />
                     </div>
@@ -125,13 +184,16 @@ const AddCompany = () => {
                                 className="w-full"
                                 value={postcode.postcode}
                                 onChange={(e) => {
-                                    setData("postcode", e.target.value);
+                                    // setData("postcode", e.target.value);
                                     setPostcode({ postcode: e.target.value });
+                                    setForm({
+                                        ...form,
+                                        postcode: e.target.value,
+                                    });
                                 }}
                             />
                             <Button
                                 onClick={(e) => {
-                                    e.preventDefault();
                                     handleSearch(e);
                                 }}
                                 type="button"
@@ -140,22 +202,7 @@ const AddCompany = () => {
                                 className="mx-4"
                             />
                         </div>
-                        {/* <InputError message={errors.postcode} /> */}
-                    </div>
-
-                    {/* Display the search results */}
-                    <div className="mb-4">
-                        {postcodes.length > 0 ? (
-                            <ul>
-                                {postcodes.map((postcode) => (
-                                    <li key={postcode.id}>
-                                        {postcode.postcode} - {postcode.city}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p>No results found.</p>
-                        )}
+                        <InputError message={errors.postcode} />
                     </div>
 
                     <div className="mb-3">
@@ -165,9 +212,12 @@ const AddCompany = () => {
                         />
                         <Dropdown
                             id="prefecture_id"
-                            value={data.prefecture_id}
+                            value={form.prefecture_id}
                             options={prefectureOptions}
-                            onChange={(e) => setData("prefecture_id", e.value)}
+                            onChange={(e) => {
+                                // setData("prefecture_id", e.value)
+                                setForm({ ...form, prefecture_id: e.value });
+                            }}
                             placeholder="Select a prefecture"
                             className="w-full"
                         />
@@ -180,8 +230,11 @@ const AddCompany = () => {
                             id="city"
                             placeholder="City"
                             className="w-full"
-                            value={data.city}
-                            onChange={(e) => setData("city", e.target.value)}
+                            value={form.city}
+                            onChange={(e) => {
+                                // setData("city", e.target.value);
+                                setForm({ ...form, city: e.target.value });
+                            }}
                         />
                         <InputError message={errors.city} />
                     </div>
@@ -192,8 +245,11 @@ const AddCompany = () => {
                             id="local"
                             placeholder="Local"
                             className="w-full"
-                            value={data.local}
-                            onChange={(e) => setData("local", e.target.value)}
+                            value={form.local}
+                            onChange={(e) => {
+                                // setData("local", e.target.value)
+                                setForm({ ...form, local: e.target.value });
+                            }}
                         />
                         <InputError message={errors.local} />
                     </div>
@@ -207,10 +263,15 @@ const AddCompany = () => {
                             id="street_address"
                             placeholder="Street Address"
                             className="w-full"
-                            value={data.street_address}
-                            onChange={(e) =>
-                                setData("street_address", e.target.value)
-                            }
+                            value={form.street_address}
+                            onChange={(e) => {
+                                // setData("street_address", e.target.value);
+
+                                setForm({
+                                    ...form,
+                                    street_address: e.target.value,
+                                });
+                            }}
                         />
                         <InputError message={errors.street_address} />
                     </div>
@@ -224,10 +285,14 @@ const AddCompany = () => {
                             id="business_hour"
                             placeholder="Business Hour"
                             className="w-full"
-                            value={data.business_hour}
-                            onChange={(e) =>
-                                setData("business_hour", e.target.value)
-                            }
+                            value={form.business_hour}
+                            onChange={(e) => {
+                                // setData("business_hour", e.target.value)
+                                setForm({
+                                    ...form,
+                                    business_hour: e.target.value,
+                                });
+                            }}
                         />
                         <InputError message={errors.business_hour} />
                     </div>
@@ -241,10 +306,14 @@ const AddCompany = () => {
                             id="regular_holiday"
                             placeholder="Regular Holiday"
                             className="w-full border-gray-300 rounded-md shadow-sm"
-                            value={data.regular_holiday}
-                            onChange={(e) =>
-                                setData("regular_holiday", e.target.value)
-                            }
+                            value={form.regular_holiday}
+                            onChange={(e) => {
+                                // setData("regular_holiday", e.target.value)
+                                setForm({
+                                    ...form,
+                                    regular_holiday: e.target.value,
+                                });
+                            }}
                         />
                         <InputError message={errors.regular_holiday} />
                     </div>
@@ -255,8 +324,11 @@ const AddCompany = () => {
                             id="phone"
                             placeholder="Phone Number"
                             className="w-full"
-                            value={data.phone}
-                            onChange={(e) => setData("phone", e.target.value)}
+                            value={form.phone}
+                            onChange={(e) => {
+                                // setData("phone", e.target.value);
+                                setForm({ ...form, phone: e.target.value });
+                            }}
                         />
                         <InputError message={errors.phone} />
                     </div>
@@ -267,8 +339,11 @@ const AddCompany = () => {
                             id="fax"
                             placeholder="Fax Number"
                             className="w-full"
-                            value={data.fax}
-                            onChange={(e) => setData("fax", e.target.value)}
+                            value={form.fax}
+                            onChange={(e) => {
+                                // setData("fax", e.target.value)
+                                setForm({ ...form, fax: e.target.value });
+                            }}
                         />
                         <InputError message={errors.fax} />
                     </div>
@@ -279,8 +354,11 @@ const AddCompany = () => {
                             id="url"
                             placeholder="Website URL"
                             className="w-full"
-                            value={data.url}
-                            onChange={(e) => setData("url", e.target.value)}
+                            value={form.url}
+                            onChange={(e) => {
+                                // setData("url", e.target.value)
+                                setForm({ ...form, url: e.target.value });
+                            }}
                         />
                         <InputError message={errors.url} />
                     </div>
@@ -294,10 +372,14 @@ const AddCompany = () => {
                             id="license_number"
                             placeholder="License Number"
                             className="w-full"
-                            value={data.license_number}
-                            onChange={(e) =>
-                                setData("license_number", e.target.value)
-                            }
+                            value={form.license_number}
+                            onChange={(e) => {
+                                // setData("license_number", e.target.value)
+                                setForm({
+                                    ...form,
+                                    license_number: e.target.value,
+                                });
+                            }}
                         />
                         <InputError message={errors.license_number} />
                     </div>
@@ -308,9 +390,10 @@ const AddCompany = () => {
                             id="image"
                             type="file"
                             className="w-full border-gray-300 rounded-md shadow-sm"
-                            onChange={(e) =>
-                                setData("image", e.target.files[0])
-                            }
+                            onChange={(e) => {
+                                // setData("image", e.target.files[0])
+                                setForm({ ...form, image: e.target.files[0] });
+                            }}
                         />
                         <InputError message={errors.image} />
                     </div>

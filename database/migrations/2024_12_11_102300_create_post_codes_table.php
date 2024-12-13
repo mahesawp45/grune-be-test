@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('post_codes', function (Blueprint $table) {
+        Schema::create('postcodes', function (Blueprint $table) {
             $table->id();
             $table->string('public_body_code');
             $table->string('old_postcode');
@@ -37,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('post_codes');
+        Schema::dropIfExists('postcodes');
     }
 };

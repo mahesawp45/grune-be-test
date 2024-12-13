@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\PostCodeController;
+use App\Http\Controllers\PrefectureController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/postcodes', [PostCodeController::class, 'search'])->name('search');
+    Route::get('/prefecture', [PrefectureController::class, 'getOneByName'])->name('getOneByName');
 });
 
 

@@ -63,4 +63,18 @@ class PrefectureController extends Controller
     {
         //
     }
+
+    public function getOneByName(Request $request)
+    {
+        // Get the input from the request
+        $req = $request->query('prefecture');
+
+        $prefecture = Prefecture::where('display_name', $req)->first();
+
+        return response()->json([
+            'issuccess' => true,
+            'data' => $prefecture,
+            'message' => "Success",
+        ]);
+    }
 }
