@@ -21,9 +21,11 @@ class CompanyRequest extends FormRequest
      */
     public function rules(): array
     {
+        $companyId = $this->route('id');
+
         return [
             'name' => 'required|string|max:50',
-            'email' => 'required|email|max:255|unique:companies,email',
+            'email' => 'required|email|max:255|unique:companies,email,' . $companyId,
             'postcode' => 'required|string|min:7|max:7',
             'prefecture_id' => 'required|integer|exists:prefectures,id',
             'city' => 'required|string|max:255',

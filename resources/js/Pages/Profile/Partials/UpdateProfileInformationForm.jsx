@@ -20,11 +20,7 @@ export default function UpdateProfileInformation({
     const submit = (e) => {
         e.preventDefault();
 
-        console.log("====================================");
-        console.log("data ====>>> ", data);
-        console.log("====================================");
-
-        // patch(route('profile.update'));
+        patch(route("profile.update"));
     };
 
     return (

@@ -6,11 +6,11 @@ import Layout from "@/Layouts/layout/layout";
 import { useForm, usePage } from "@inertiajs/react";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
+import api from "@/config/api/api";
 
-const DetailCompany = () => {
-    const company = usePage().props.company;
-    const prefecture = usePage().props.prefecture;
+const EditCompany = () => {
+    const { company, prefecture } = usePage().props;
 
     const [loading, setLoading] = useState(false);
     const [postcode, setPostcode] = useState({ postcode: "" });
@@ -21,7 +21,24 @@ const DetailCompany = () => {
         });
     });
 
-    const { data, setData, errors, post, reset, processing } = useForm({
+    // Helper function to convert URL to File
+    const urlToFile = async (url, filename) => {
+        try {
+            // Fetch the image from the URL
+            const response = await fetch(url);
+            const blob = await response.blob();
+
+            // Create a File object
+            return new File([blob], filename, {
+                type: blob.type,
+            });
+        } catch (error) {
+            console.error("Error converting URL to File:", error);
+            return null;
+        }
+    };
+
+    const { data, setData, errors, post, patch, reset, processing } = useForm({
         name: company.name,
         email: company.email,
         postcode: company.postcode,
@@ -35,8 +52,31 @@ const DetailCompany = () => {
         fax: company.fax,
         url: company.url,
         license_number: company.license_number,
-        image: company.image,
+        image: null,
     });
+
+    const init = async () => {
+        setData({
+            name: company.name,
+            email: company.email,
+            postcode: company.postcode,
+            prefecture_id: company.prefecture_id,
+            city: company.city,
+            local: company.local,
+            street_address: company.street_address,
+            business_hour: company.business_hour,
+            regular_holiday: company.regular_holiday,
+            phone: company.phone,
+            fax: company.fax,
+            url: company.url,
+            license_number: company.license_number,
+            image: await urlToFile(company.image, `image_${company.id}`),
+        });
+    };
+
+    useEffect(() => {
+        init();
+    }, [company, prefecture]);
 
     // Memoized search postcodes to prevent unnecessary recreations
     const handleSearch = useCallback(
@@ -161,25 +201,47 @@ const DetailCompany = () => {
         },
         []
     );
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         console.log("====================================");
-        console.log("DATA EDIT ---->>> ", data);
+        console.log("aowkowa ===> ", data);
         console.log("====================================");
 
-        //    post(route("company.store"), {
-        //        preserveScroll: true,
-        //        data,
-        //        onSuccess: () => {
-        //            reset();
-        //        },
-        //        onError: (e) => {
-        //            console.log("====================================");
-        //            console.log("ERROR ADD COMPANY --> ", e);
-        //            console.log("====================================");
-        //        },
-        //    });
+        try {
+            await api.patch(
+                route("company.update", {
+                    id: company.id,
+                }),
+                data
+            );
+
+            reset();
+        } catch (error) {
+            console.log("====================================");
+            console.log("ERROR EDIT COMPANY --> ", error.response.data.errors);
+            console.log("====================================");
+        }
+
+        // patch(
+        //     route("company.update", {
+        //         id: company.id,
+        //     }),
+        //     {
+        //         preserveScroll: true,
+        //         data: data,
+        //         method: "patch",
+        //         onSuccess: () => {
+        //             reset();
+        //         },
+        //         onError: (e) => {
+        //             console.log("====================================");
+        //             console.log("ERROR EDIT COMPANY --> ", e);
+        //             console.log("====================================");
+        //         },
+        //     }
+        // );
     };
 
     return (
@@ -194,7 +256,11 @@ const DetailCompany = () => {
                     </p>
                 </header>
 
-                <form onSubmit={handleSubmit} className="mt-4 space-y-6">
+                <form
+                    onSubmit={handleSubmit}
+                    className="mt-4 space-y-6"
+                    method="PATCH"
+                >
                     <div className="mb-3">
                         <InputLabel htmlFor="name" value="Name" />
                         <InputText
@@ -456,4 +522,4 @@ const DetailCompany = () => {
     );
 };
 
-export default DetailCompany;
+export default EditCompany;

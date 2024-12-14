@@ -62,6 +62,8 @@ class CompanyController extends Controller
                 'prev_page_url' => $companies->previousPageUrl(),
                 'next_page_url' => $companies->nextPageUrl(),
             ],
+            'message' => 'Success Get All Companies',
+            'isSuccess' => true,
         ];
 
         if ($request->expectsJson()) {
@@ -107,7 +109,7 @@ class CompanyController extends Controller
 
             return Redirect::route('company.index')->with('success', 'Company successfully created!');
         } catch (\Throwable $th) {
-            return Redirect::back()->with('error', 'Company unsuccessfully created!');
+            return Redirect::back()->with('error', 'Company unsuccessfully created! '  . $th->getMessage());
         }
     }
 
@@ -153,16 +155,65 @@ class CompanyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Company $company)
+    public function update(CompanyRequest $request, $id)
     {
-        //
+
+        dd([$id, $request]);
+
+        try {
+            // Find the company
+            $company = Company::findOrFail($id);
+
+            // Prepare the data for update
+            $validatedData = $request->validated();
+
+            // Remove null values to perform a partial update
+            $validatedData = array_filter($validatedData, function ($value) {
+                return $value !== null;
+            });
+
+            // Update company details
+            $company->update($validatedData);
+
+            // Handle image upload if present
+            if ($request->hasFile('image')) {
+                // Remove old image if exists
+                if ($company->image) {
+                    Storage::delete($company->image);
+                }
+
+                $file = $request->file('image');
+                $customName = 'image_' . $company->id . '.' . $file->getClientOriginalExtension();
+                $imagePath = $file->storeAs('images', $customName, 'public');
+
+                // Update the company's image path
+                $company->update(['image' => $imagePath]);
+            }
+
+            return Redirect::route('company.index')->with('success', 'Company successfully updated!');
+        } catch (\Throwable $th) {
+            return Redirect::back()->with('error', 'Failed to update company: ' . $th->getMessage());
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Company $company)
+    public function destroy(Request $request)
     {
-        //
+
+        try {
+            $company = Company::findOrFail($request->id);
+
+
+            if ($company->image) {
+                Storage::delete($company->image);
+            }
+            $company->delete();
+
+            return Redirect::back()->with('success', 'Company successfully deleted!');
+        } catch (\Throwable $th) {
+            return Redirect::back()->with('error', 'Failed to delete company: ' . $th->getMessage());
+        }
     }
 }

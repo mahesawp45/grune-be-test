@@ -1,22 +1,24 @@
 import PrimaryTable from "@/Components/PrimaryTable";
 import api from "@/config/api/api";
 import Layout from "@/Layouts/layout/layout";
-import { Link } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 
 const Company = () => {
-    const [currentPage, setCurrentPage] = useState(1);
     const [companies, setCompanies] = useState();
     const [loading, setLoading] = useState(false);
-    const [params, setParamss] = useState({
+    const [active, setActive] = useState(1);
+    const [params, setParams] = useState({
         meta: {
             per_page: 10,
             page: 1,
         },
         search: "",
     });
+
+    const { delete: deleteCompany } = useForm();
 
     // Memoized search companies to prevent unnecessary recreations
     const handleSearch = useCallback(async () => {
@@ -46,9 +48,50 @@ const Company = () => {
         }
     }, [params, params.search]);
 
+    const handleDelete = async (id) => {
+        if (confirm("Are you sure you want to delete this company?")) {
+            deleteCompany(route("company.destroy", { id }), {
+                onSuccess: () => {
+                    // Refresh the list after deletion
+                    handleSearch();
+                },
+                onError: (e) => {
+                    console.error("ERROR DELETE COMPANY -> ", e);
+                },
+            });
+        }
+    };
+
+    const getItemProps = (index) => ({
+        className:
+            active === index
+                ? "relative z-10 flex items-center bg-gray-800 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer"
+                : "relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold text-black focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer",
+        onClick: () => {
+            setActive(index);
+
+            setParams({ ...params, meta: { page: index } });
+        },
+    });
+
+    const next = () => {
+        if (active === companies?.pagination.last_page) return;
+        setActive(active + 1);
+
+        setParams({ ...params, meta: { page: active + 1 } });
+    };
+
+    const prev = () => {
+        if (active === 1) return;
+        setActive(active - 1);
+
+        setParams({ ...params, meta: { page: active - 1 } });
+    };
+
+    // initialize the companies data
     useEffect(() => {
         handleSearch();
-    }, [params.search]);
+    }, [params.search, params.meta.page, active]);
 
     const columns = useMemo(
         () => [
@@ -123,6 +166,10 @@ const Company = () => {
                             <Button
                                 icon="pi pi-times"
                                 rounded
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    await handleDelete(info.row.original.id);
+                                }}
                                 severity="danger"
                             />
                         </div>
@@ -141,39 +188,65 @@ const Company = () => {
                     isLoading={loading}
                     title="Companies"
                     filters={
-                        <div className="mt-4 sm:mt-0 sm:flex-none flex flex-row space-x-2 items-center lg:w-8/12 w-full">
-                            <InputText
-                                id="search"
-                                placeholder="Search"
-                                className="w-full"
-                                value={params.search}
-                                onChange={(e) => {
-                                    setParamss({
-                                        ...params,
-                                        search: e.target.value,
-                                    });
-                                }}
-                            />
-                        </div>
+                        <InputText
+                            id="search"
+                            placeholder="Search"
+                            className="w-full"
+                            value={params.search}
+                            onChange={(e) => {
+                                setParams({
+                                    ...params,
+                                    search: e.target.value,
+                                });
+                            }}
+                        />
                     }
                     actions={
-                        <div className="flex flex-row w-full justify-end">
-                            <a
-                                href={route("company.create")}
-                                className="bg-gray-800 border inline-flex border-transparent rounded-md font-medium  text-white capitalize tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 p-3 "
-                            >
-                                Add Company
-                            </a>
-                        </div>
+                        <Link
+                            href={route("company.create")}
+                            className="btn bg-gray-800 text-white px-4 py-2 rounded-md text-center"
+                        >
+                            Add Company
+                        </Link>
                     }
                     columns={columns}
                     data={companies?.data ?? []}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    totalPage={5}
-                    limitPage={10}
-                    isCommon={true}
+                    totalPage={companies?.pagination?.last_page || 0}
+                    limitPage={companies?.pagination?.per_page || 10}
                 />
+                {/* Pagination Controls */}
+                <div className="w-full my-4">
+                    <nav
+                        className="isolate inline-flex -space-x-px rounded-md shadow-sm w-full align-self-center"
+                        aria-label="Pagination"
+                    >
+                        <a
+                            onClick={prev}
+                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
+                        >
+                            <span className="sr-only">Previous</span>
+                        </a>
+                        {Array.from(
+                            { length: companies?.pagination?.last_page ?? 0 },
+                            (_, index) => (
+                                <a
+                                    key={index + 1}
+                                    aria-current="page"
+                                    {...getItemProps(index + 1)}
+                                >
+                                    {index + 1}
+                                </a>
+                            )
+                        )}
+
+                        <a
+                            onClick={next}
+                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
+                        >
+                            <span className="sr-only">Next</span>
+                        </a>
+                    </nav>
+                </div>
             </div>
         </Layout>
     );

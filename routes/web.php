@@ -40,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 
+
+
+
     Route::controller(CompanyController::class)->group(function () {
         // show index/list company page
         Route::get('/company', 'index')->name('company.index');
@@ -55,8 +58,12 @@ Route::middleware('auth')->group(function () {
 
         // show edit company page
         Route::get('/edit-company', 'edit')->name('company.edit');
-        // Route::put('/customer-message/{id}', 'reply')->name('reply_message');
-        // Route::delete('/customer-message/{id}', 'destroy')->name('destroy_message');
+
+        // update company
+        Route::patch('/update-company/{id}', 'update')->name('company.update');
+
+        // delete company
+        Route::delete('/delete-company/{id}', 'destroy')->name('company.destroy');
     });
 
     Route::get('/postcodes', [PostCodeController::class, 'search'])->name('searchPostCode');
