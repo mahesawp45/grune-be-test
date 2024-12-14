@@ -1,34 +1,41 @@
+import { Dropdown } from "primereact/dropdown";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import Layout from "@/Layouts/layout/layout";
-import { useForm } from "@inertiajs/react";
-import { InputText } from "primereact/inputtext";
-import React, { useState, useCallback } from "react";
-import { Dropdown } from "primereact/dropdown";
+import { useForm, usePage } from "@inertiajs/react";
 import { Button } from "primereact/button";
-import api from "@/config/api/api";
+import { InputText } from "primereact/inputtext";
+import React, { useCallback, useState } from "react";
 
-const AddCompany = () => {
+const DetailCompany = () => {
+    const company = usePage().props.company;
+    const prefecture = usePage().props.prefecture;
+
     const [loading, setLoading] = useState(false);
     const [postcode, setPostcode] = useState({ postcode: "" });
-    const [prefectureOptions, setPrefectureOptions] = useState([]);
+    const [prefectureOptions, setPrefectureOptions] = useState(() => {
+        return [].concat({
+            label: prefecture.display_name,
+            value: prefecture.id,
+        });
+    });
 
     const { data, setData, errors, post, reset, processing } = useForm({
-        name: "",
-        email: "",
-        postcode: "",
-        prefecture_id: null,
-        city: "",
-        local: "",
-        street_address: "",
-        business_hour: "",
-        regular_holiday: "",
-        phone: "",
-        fax: "",
-        url: "",
-        license_number: "",
-        image: null,
+        name: company.name,
+        email: company.email,
+        postcode: company.postcode,
+        prefecture_id: company.prefecture_id,
+        city: company.city,
+        local: company.local,
+        street_address: company.street_address,
+        business_hour: company.business_hour,
+        regular_holiday: company.regular_holiday,
+        phone: company.phone,
+        fax: company.fax,
+        url: company.url,
+        license_number: company.license_number,
+        image: company.image,
     });
 
     // Memoized search postcodes to prevent unnecessary recreations
@@ -154,22 +161,25 @@ const AddCompany = () => {
         },
         []
     );
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        post(route("company.store"), {
-            preserveScroll: true,
-            data,
-            onSuccess: () => {
-                reset();
-            },
-            onError: (e) => {
-                console.log("====================================");
-                console.log("ERROR ADD COMPANY --> ", e);
-                console.log("====================================");
-            },
-        });
+        console.log("====================================");
+        console.log("DATA EDIT ---->>> ", data);
+        console.log("====================================");
+
+        //    post(route("company.store"), {
+        //        preserveScroll: true,
+        //        data,
+        //        onSuccess: () => {
+        //            reset();
+        //        },
+        //        onError: (e) => {
+        //            console.log("====================================");
+        //            console.log("ERROR ADD COMPANY --> ", e);
+        //            console.log("====================================");
+        //        },
+        //    });
     };
 
     return (
@@ -177,10 +187,10 @@ const AddCompany = () => {
             <section>
                 <header>
                     <h2 className="text-2Xl font-medium text-gray-900">
-                        Add Company
+                        Edit Company
                     </h2>
                     <p className="mt-1 text-sm text-gray-600">
-                        Add a new company
+                        Edit a new company
                     </p>
                 </header>
 
@@ -423,12 +433,21 @@ const AddCompany = () => {
                                 setData({ ...data, image: e.target.files[0] });
                             }}
                         />
+                        <div className="w-64 h-64 rounded-full mt-2">
+                            <img
+                                src={`${company.image}`}
+                                alt={company.name}
+                                className="rounded-full bg-gray-50 object-cover"
+                                height={96}
+                                width={96}
+                            />
+                        </div>
                         <InputError message={errors.image} />
                     </div>
 
                     <div className="flex items-center gap-4">
                         <PrimaryButton disabled={processing}>
-                            Save
+                            Edit
                         </PrimaryButton>
                     </div>
                 </form>
@@ -437,4 +456,4 @@ const AddCompany = () => {
     );
 };
 
-export default AddCompany;
+export default DetailCompany;

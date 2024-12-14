@@ -1,6 +1,9 @@
 import PrimaryTable from "@/Components/PrimaryTable";
 import api from "@/config/api/api";
 import Layout from "@/Layouts/layout/layout";
+import { Link } from "@inertiajs/react";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 
 const Company = () => {
@@ -41,29 +44,29 @@ const Company = () => {
             console.log("====================================");
             setLoading(false);
         }
-    }, [params]);
-
-    console.log("====================================");
-    console.log("COMPANIES ---> ", companies);
-    console.log("====================================");
+    }, [params, params.search]);
 
     useEffect(() => {
         handleSearch();
-    }, []);
+    }, [params.search]);
 
     const columns = useMemo(
         () => [
             {
                 header: "Name",
                 cell: (info) => (
-                    <div className="py-4 sm:pl-8 pr-3 text-sm font-medium text-gray-900">
-                        <div className="flex flex-row space-x-2 items-center">
-                            <img
-                                src={`${info.row.original.image}`}
-                                alt={info.row.original.name}
-                                className="h-10 w-10 rounded-full bg-gray-50 object-cover"
-                            />
-                            <p className="font-bold">
+                    <div className="py-4 sm:pl-6 pr-3 text-sm font-medium text-gray-900 w-full">
+                        <div className="flex flex-row items-center w-full">
+                            <div className="w-40 h-40 rounded-full mr-4">
+                                <img
+                                    src={`${info.row.original.image}`}
+                                    alt={info.row.original.name}
+                                    className="rounded-full bg-gray-50 object-cover"
+                                    height={72}
+                                    width={72}
+                                />
+                            </div>
+                            <p className="font-bold align-self-center">
                                 {info.row.original.name ?? "-"}
                             </p>
                         </div>
@@ -90,10 +93,38 @@ const Company = () => {
             {
                 header: "Action",
                 cell: (info) => (
-                    <div className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <div className="flex flex-row space-x-2">
-                            <button>Edit</button>
-                            <button>Delete</button>
+                    <div className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 w-full">
+                        <div className="flex flex-row justify-between space-x-4 w-full">
+                            <Link
+                                href={route("company.show", {
+                                    id: info.row.original.id,
+                                })}
+                            >
+                                <Button
+                                    icon="pi pi-eye"
+                                    rounded
+                                    severity="info"
+                                />
+                            </Link>
+
+                            <Link
+                                href={route("company.edit", {
+                                    id: info.row.original.id,
+                                })}
+                            >
+                                <Button
+                                    icon="pi pi-pencil"
+                                    rounded
+                                    severity="warning"
+                                    className="mx-2"
+                                />
+                            </Link>
+
+                            <Button
+                                icon="pi pi-times"
+                                rounded
+                                severity="danger"
+                            />
                         </div>
                     </div>
                 ),
@@ -107,33 +138,24 @@ const Company = () => {
             <div className="">
                 <h1 className="font-bold text-xl">Company</h1>
                 <PrimaryTable
+                    isLoading={loading}
                     title="Companies"
-                    // onFilterReset={() => {}}
-                    // filters={
-                    //   <div className="mt-4 sm:mt-0 sm:flex-none flex flex-row space-x-2 items-center lg:w-8/12 w-full">
-                    //     <DropdownFilter
-                    //       label="Status"
-                    //       selectedItem={selectedStatusItem}
-                    //       setSelectedItem={setSelectedStatusItem}
-                    //       icon={CheckCircleIcon}
-                    //       items={status}
-                    //     />
-
-                    //     <PrimaryInput
-                    //       onChange={(e) => {}}
-                    //       value={""}
-                    //       placeholder="Cari Pengguna"
-                    //       className="w-full"
-                    //       trailing={
-                    //         <IconButton
-                    //           icon={MagnifyingGlassIcon}
-                    //           onClick={() => {}}
-                    //           className="absolute top-1 right-1"
-                    //         />
-                    //       }
-                    //     />
-                    //   </div>
-                    // }
+                    filters={
+                        <div className="mt-4 sm:mt-0 sm:flex-none flex flex-row space-x-2 items-center lg:w-8/12 w-full">
+                            <InputText
+                                id="search"
+                                placeholder="Search"
+                                className="w-full"
+                                value={params.search}
+                                onChange={(e) => {
+                                    setParamss({
+                                        ...params,
+                                        search: e.target.value,
+                                    });
+                                }}
+                            />
+                        </div>
+                    }
                     actions={
                         <div className="flex flex-row w-full justify-end">
                             <a
@@ -146,7 +168,6 @@ const Company = () => {
                     }
                     columns={columns}
                     data={companies?.data ?? []}
-                    isLoading={false}
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}
                     totalPage={5}

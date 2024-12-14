@@ -41,10 +41,20 @@ Route::middleware('auth')->group(function () {
 
 
     Route::controller(CompanyController::class)->group(function () {
+        // show index/list company page
         Route::get('/company', 'index')->name('company.index');
+
+        // show add company page
         Route::get('/add-company', 'create')->name('company.create');
+
+        // show store company to DB
         Route::post('/store-company', 'store')->name('company.store');
-        // Route::get('/customer-message/{id}', 'show')->name('show_message');
+
+        // show detail company page
+        Route::get('/detail-company', 'show')->name('company.show');
+
+        // show edit company page
+        Route::get('/edit-company', 'edit')->name('company.edit');
         // Route::put('/customer-message/{id}', 'reply')->name('reply_message');
         // Route::delete('/customer-message/{id}', 'destroy')->name('destroy_message');
     });

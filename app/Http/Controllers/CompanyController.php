@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompanyRequest;
+use App\Models\Prefecture;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CompanyController extends Controller
@@ -16,29 +18,38 @@ class CompanyController extends Controller
      */
     public function index(Request $request)
     {
-        $meta = $request->input('meta', ['per_page' => 10, 'page' => 1]); // Default values
+        $meta = $request->input('meta', ['per_page' => 10, 'page' => 1]);
         $searchTerm = $request->input('search');
 
+        $companiesQuery = Company::query();
 
-        $companies = new Company();
-
-        if (isset($searchTerm)) {
-            $companies = $companies->where(function ($query) use ($searchTerm) {
-                $query->where('name', 'like', "%{$searchTerm['value']}%")
-                    ->orWhere('email', 'like', "%{$searchTerm['value']}%")
-                    ->orWhere('phone', 'like', "%{$searchTerm['value']}%");
+        if ($searchTerm) {
+            $companiesQuery->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%")
+                    ->orWhere('phone', 'like', "%{$searchTerm}%");
             });
         }
 
-        $companies = $companies->paginate(
+        $companies = $companiesQuery->paginate(
             $meta['per_page'] ?? 10,
             ['*'],
             'page',
-            $meta['page'] ?? 1,
+            $meta['page'] ?? 1
         );
 
+        $companiesData = $companies->items();
+
+        // Map the data to include full image URLs for files stored in public/storage
+        $companiesData = array_map(function ($company) {
+            $company['image'] = $company['image']
+                ? Storage::url($company['image']) // Generate correct URL for storage files
+                : asset('images/default.png');    // Use a fallback if the image doesn't exist
+            return $company;
+        }, $companiesData);
+
         $data = [
-            'data' => $companies->items(),
+            'data' => $companiesData,
             'pagination' => [
                 'total'        => $companies->total(),
                 'per_page'     => $companies->perPage(),
@@ -54,7 +65,7 @@ class CompanyController extends Controller
         ];
 
         if ($request->expectsJson()) {
-            return $data;
+            return response()->json($data);
         }
 
         return Inertia::render('Company/Company', $data);
@@ -103,17 +114,40 @@ class CompanyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Company $company)
+    public function show(Request $request)
     {
-        //
+
+        try {
+            $company = Company::findOrFail($request->id);
+            $company['image'] = $company['image']
+                ? Storage::url($company['image']) // Generate correct URL for storage files
+                : asset('images/default.png');
+
+            $prefecture = Prefecture::where('id', $company->prefecture_id)->first();
+
+            return Inertia::render('Company/DetailCompany', compact('company', 'prefecture'));
+        } catch (\Throwable $th) {
+            return Redirect::back()->with('error', 'Failed Get Detail Company with id ' . $request->id, '!');
+        }
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Company $company)
+    public function edit(Request $request)
     {
-        //
+        try {
+            $company = Company::findOrFail($request->id);
+            $company['image'] = $company['image']
+                ? Storage::url($company['image']) // Generate correct URL for storage files
+                : asset('images/default.png');
+
+            $prefecture = Prefecture::where('id', $company->prefecture_id)->first();
+
+            return Inertia::render('Company/EditCompany', compact('company', 'prefecture'));
+        } catch (\Throwable $th) {
+            return Redirect::back()->with('error', 'Failed Get Detail for Edit Company with id ' . $request->id, '!');
+        }
     }
 
     /**

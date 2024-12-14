@@ -7,12 +7,10 @@ import {
     getPaginationRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import PrimaryButton from "./PrimaryButton";
 
 const PrimaryTable = ({
     actions,
     filters,
-    onFilterReset,
     columns,
     data,
     setCurrentPage,
@@ -21,7 +19,6 @@ const PrimaryTable = ({
     totalPage,
     limitPage,
     isLoading,
-    setIsLoading,
     className,
     from,
     last,
@@ -73,25 +70,6 @@ const PrimaryTable = ({
             <div className="pb-8 relative">
                 <div className="w-full relative">
                     <div className="sm:flex sm:items-center px-4 sm:px-6 lg:px-8 w-full relative">
-                        <div className="sm:flex-auto">
-                            {onFilterReset ? (
-                                <button
-                                    onClick={() => {
-                                        onFilterReset();
-                                    }}
-                                    className="flex flex-row items-center hover:text-gray-900"
-                                >
-                                    {/* <XMarkIcon
-                                        width={16}
-                                        height={16}
-                                        color="gray"
-                                    /> */}
-                                    <p className="text-sm font-semibold leading-6 text-gray-600 underline hover:text-gray-900">
-                                        Reset
-                                    </p>
-                                </button>
-                            ) : null}
-                        </div>
                         <div className="mt-4 sm:mt-0 sm:flex-none flex flex-row space-x-2 items-center lg:w-8/12 w-full justify-end">
                             {filters}
                         </div>
@@ -131,59 +109,48 @@ const PrimaryTable = ({
                                                 </tr>
                                             ))}
                                     </thead>
-                                    {isLoading ? (
-                                        <tbody>
-                                            {Array.from({ length: 10 }).map(
-                                                (item) => (
-                                                    <tr
-                                                        key={item}
-                                                        className="border border-1 border-zinc-300 border-x-0"
-                                                    >
-                                                        <td className="px-5 py-2  text-[16px] font-medium leading-normal">
-                                                            <Skeleton.List />
-                                                        </td>
-                                                        <td className="px-5 py-2  text-[16px] font-medium leading-normal">
-                                                            <Skeleton.List />
-                                                        </td>
-                                                        <td className="px-5 py-2  text-[16px] font-medium leading-normal">
-                                                            <Skeleton.List />
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            )}
-                                        </tbody>
-                                    ) : (
-                                        <tbody className="bg-white">
-                                            {table
-                                                .getRowModel()
-                                                .rows.map((row) => (
-                                                    <tr
-                                                        key={row.id}
-                                                        className="even:bg-gray-50 hover:bg-gray-50"
-                                                    >
-                                                        {row
-                                                            .getVisibleCells()
-                                                            .map((cell) => (
-                                                                <td
-                                                                    key={
-                                                                        cell.id
-                                                                    }
-                                                                    className="whitespace-nowrap px-3 py-2 text-sm text-gray-500"
-                                                                >
-                                                                    {flexRender(
-                                                                        cell
-                                                                            .column
-                                                                            .columnDef
-                                                                            .cell,
-                                                                        cell.getContext()
-                                                                    )}
-                                                                </td>
-                                                            ))}
-                                                    </tr>
-                                                ))}
-                                        </tbody>
-                                    )}
+
+                                    {isLoading === false &&
+                                        data.length !== 0 && (
+                                            <tbody className="bg-white">
+                                                {table
+                                                    .getRowModel()
+                                                    .rows.map((row) => (
+                                                        <tr
+                                                            key={row.id}
+                                                            className="even:bg-gray-50 hover:bg-gray-50"
+                                                        >
+                                                            {row
+                                                                .getVisibleCells()
+                                                                .map((cell) => (
+                                                                    <td
+                                                                        key={
+                                                                            cell.id
+                                                                        }
+                                                                        className="whitespace-nowrap px-3 py-2 text-sm text-gray-500"
+                                                                    >
+                                                                        {flexRender(
+                                                                            cell
+                                                                                .column
+                                                                                .columnDef
+                                                                                .cell,
+                                                                            cell.getContext()
+                                                                        )}
+                                                                    </td>
+                                                                ))}
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        )}
                                 </table>
+
+                                {isLoading && (
+                                    <div className="w-full h-full place-items-center">
+                                        <p className=" text-center py-6 ">
+                                            Loading...
+                                        </p>
+                                    </div>
+                                )}
 
                                 {isLoading === false && data.length === 0 && (
                                     <div className="w-full h-full place-items-center">
@@ -241,14 +208,6 @@ const PrimaryTable = ({
                                         </button>
                                     </div>
                                     <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-end">
-                                        {/* <div>
-                      <p className="text-sm text-gray-400">
-                        Showing{" "}
-                        <span className="font-medium">{currentPage}</span> to
-                                              <span className="font-medium">{}</span> of
-                        <span className="font-medium">97</span> results
-                      </p>
-                    </div> */}
                                         <div>
                                             <nav
                                                 aria-label="Pagination"
@@ -277,41 +236,48 @@ const PrimaryTable = ({
                                                     <span className="sr-only">
                                                         Previous
                                                     </span>
-                                                    {/* <ChevronLeftIcon
-                                                        aria-hidden="true"
-                                                        className="h-5 w-5"
-                                                    /> */}
                                                 </button>
-                                                {/*{Array.from({ length: totalPage as number }).map(
-                          (item, index) => (
-                            <button
-                              key={`${index}+${new Date()}`}
-                              onClick={() => {
-                                if (
-                                  currentPage &&
-                                  totalPage !== undefined &&
-                                  setCurrentPage
-                                ) {
-                                  if (index > currentPage) {
-                                    setCurrentPage(currentPage + 1);
-                                    table.nextPage();
-                                  } else {
-                                    setCurrentPage(currentPage - 1);
-                                    table.previousPage();
-                                  }
-                                }
-                              }}
-                              aria-current="page"
-                              className={
-                                currentPage === index + 1
-                                  ? "bg-primary1 focus-visible:outline-primary2 text-white relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold  focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                                  : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold  focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                              }
-                            >
-                              {`${index + 1}`}
-                            </button>
-                          )
-                        )}*/}
+                                                {Array.from({
+                                                    length: totalPage,
+                                                }).map((item, index) => (
+                                                    <button
+                                                        key={`${index}}`}
+                                                        onClick={() => {
+                                                            if (
+                                                                currentPage &&
+                                                                totalPage !==
+                                                                    undefined &&
+                                                                setCurrentPage
+                                                            ) {
+                                                                if (
+                                                                    index >
+                                                                    currentPage
+                                                                ) {
+                                                                    setCurrentPage(
+                                                                        currentPage +
+                                                                            1
+                                                                    );
+                                                                    table.nextPage();
+                                                                } else {
+                                                                    setCurrentPage(
+                                                                        currentPage -
+                                                                            1
+                                                                    );
+                                                                    table.previousPage();
+                                                                }
+                                                            }
+                                                        }}
+                                                        aria-current="page"
+                                                        className={
+                                                            currentPage ===
+                                                            index + 1
+                                                                ? "bg-primary1 focus-visible:outline-primary2 text-white relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold  focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                                                : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold  focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                                        }
+                                                    >
+                                                        {`${index + 1}`}
+                                                    </button>
+                                                ))}
 
                                                 <button
                                                     onClick={() => {
@@ -344,10 +310,6 @@ const PrimaryTable = ({
                                                     <span className="sr-only">
                                                         Next
                                                     </span>
-                                                    {/* <ChevronRightIcon
-                                                        aria-hidden="true"
-                                                        className="h-5 w-5"
-                                                    /> */}
                                                 </button>
                                             </nav>
                                         </div>
