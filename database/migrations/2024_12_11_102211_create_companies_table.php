@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 50);
             $table->string('email', 255)->unique();
             $table->string('postcode', 7);
-            $table->foreignId('prefecture_id')->constrained('prefectures');
+            $table->foreignId('prefecture_id');
             $table->string('city', 255);
             $table->string('local', 255);
             $table->string('street_address', 255)->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('fax', 50)->nullable();
             $table->string('url', 255)->nullable();
             $table->string('license_number', 50)->nullable();
-            $table->string('image');
+            $table->string('image')->default('');
             $table->timestamps();
         });
     }

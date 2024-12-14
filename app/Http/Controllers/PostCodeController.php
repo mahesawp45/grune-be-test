@@ -69,13 +69,13 @@ class PostCodeController extends Controller
     {
         // Get the input from the request
 
-        $postcode = $request->query('postcode');
+        $req = $request->query('postcode');
 
-        $postcodes = PostCode::where('postcode', 'like', '%' . $postcode . '%')->get();
+        $postcode = PostCode::where('postcode', 'like', '%' . $req . '%')->first();
 
         return response()->json([
             'issuccess' => true,
-            'data' => $postcodes,
+            'data' => $postcode,
             'message' => "Success",
         ]);
     }

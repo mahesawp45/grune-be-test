@@ -12,10 +12,9 @@ import api from "@/config/api/api";
 const AddCompany = () => {
     const [loading, setLoading] = useState(false);
     const [postcode, setPostcode] = useState({ postcode: "" });
-    const [postcodes, setPostcodes] = useState([]);
     const [prefectureOptions, setPrefectureOptions] = useState([]);
 
-    const [form, setForm] = useState({
+    const { data, setData, errors, post, reset, processing } = useForm({
         name: "",
         email: "",
         postcode: "",
@@ -32,17 +31,6 @@ const AddCompany = () => {
         image: null,
     });
 
-    const {
-        data,
-        setData,
-        errors,
-        setDefaults,
-        post,
-        reset,
-        processing,
-        recentlySuccessful,
-    } = useForm(form);
-
     // Memoized search postcodes to prevent unnecessary recreations
     const handleSearch = useCallback(
         async (e) => {
@@ -58,22 +46,35 @@ const AddCompany = () => {
             }
 
             try {
-                const response = await api.get(route("search"), {
+                // get the searched postcode
+                const response = await api.get(route("searchPostCode"), {
                     params: postcode,
                 });
 
-                // automatically set prefecture_id, city and local when the response froms searching the postcode is single
-                if (response.data.data.length == 1) {
-                    const result = response.data.data[0];
-                    await handleGetPrefectureByName(result.prefecture);
-                    setForm({
-                        ...form,
+                // automatically set prefecture_id, city and local when the response from searching the postcode is existed
+                if (response.data.data) {
+                    const result = response.data.data;
+
+                    await handleGetPrefectureByName({
+                        prefectureName: result.prefecture,
                         city: result.city,
                         local: result.local,
+                        postcode: result.postcode,
+
+                        // set the previous fields data to the form
+                        name: data.name,
+                        email: data.email,
+                        business_hour: data.business_hour,
+                        fax: data.fax,
+                        image: data.image,
+                        license_number: data.license_number,
+                        phone: data.phone,
+                        regular_holiday: data.regular_holiday,
+                        street_address: data.street_address,
+                        url: data.url,
                     });
                 }
 
-                setPostcodes(response.data.data);
                 setLoading(false);
             } catch (error) {
                 console.log("====================================");
@@ -86,48 +87,89 @@ const AddCompany = () => {
     );
 
     // Memoized search prefectures to prevent unnecessary recreations
-    const handleGetPrefectureByName = useCallback(async (prefectureName) => {
-        setLoading(true);
+    const handleGetPrefectureByName = useCallback(
+        async ({
+            prefectureName,
+            city,
+            local,
+            postcode,
+            name,
+            email,
+            street_address,
+            business_hour,
+            regular_holiday,
+            phone,
+            fax,
+            url,
+            license_number,
+            image,
+        }) => {
+            setLoading(true);
 
-        try {
-            const response = await api.get(route("getOneByName"), {
-                params: { prefecture: prefectureName },
-            });
-
-            // automatically set prefecture_id
-            if (response.data.data) {
-                const result = response.data.data;
-                setPrefectureOptions(
-                    [...prefectureOptions].concat({
-                        label: result.display_name,
-                        value: result.id,
-                    })
+            try {
+                const response = await api.get(
+                    route("getOnePrefectureByName"),
+                    {
+                        params: { prefecture: prefectureName },
+                    }
                 );
-                // setData("prefecture_id", result.id);
-                setForm({
-                    ...form,
-                    prefecture_id: result.id,
-                });
-            }
 
-            setLoading(false);
-        } catch (error) {
-            console.log("====================================");
-            console.log("ERROR GET PREFECTURE BY NAME ==> ", error);
-            console.log("====================================");
-            setLoading(false);
-        }
-    }, []);
+                // automatically set prefecture_id, city and local when the response froms searching the postcode is single
+                if (response.data.data) {
+                    const result = response.data.data;
+                    // set all prefectures to the options/dropdown
+                    setPrefectureOptions(
+                        [...prefectureOptions].concat({
+                            label: result.display_name,
+                            value: result.id,
+                        })
+                    );
+                    setData({
+                        // we have to set the prefecture_id, city and local at the same time or some of those will no updated
+                        prefecture_id: result.id,
+                        city: city,
+                        local: local,
+                        // set the previous fields data to the form or some data will lose in the form
+                        name: name,
+                        email: email,
+                        postcode: postcode,
+                        business_hour: business_hour,
+                        fax: fax,
+                        image: image,
+                        license_number: license_number,
+                        phone: phone,
+                        regular_holiday: regular_holiday,
+                        street_address: street_address,
+                        url: url,
+                    });
+                }
+
+                setLoading(false);
+            } catch (error) {
+                console.log("====================================");
+                console.log("ERROR GET PREFECTURE BY NAME ==> ", error);
+                console.log("====================================");
+                setLoading(false);
+            }
+        },
+        []
+    );
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("====================================");
-        console.log("FORM DATYA ---> ", form);
-        console.log("====================================");
-        // post(route("company.store"), {
-        //     preserveScroll: true,
-        //     onSuccess: () => reset(),
-        // });
+
+        post(route("company.store"), {
+            preserveScroll: true,
+            data,
+            onSuccess: () => {
+                reset();
+            },
+            onError: (e) => {
+                console.log("====================================");
+                console.log("ERROR ADD COMPANY --> ", e);
+                console.log("====================================");
+            },
+        });
     };
 
     return (
@@ -149,10 +191,9 @@ const AddCompany = () => {
                             id="name"
                             placeholder="Company Name"
                             className="w-full"
-                            value={form.name}
+                            value={data.name}
                             onChange={(e) => {
-                                // setData("name", e.target.value);
-                                setForm({ ...form, name: e.target.value });
+                                setData({ ...data, name: e.target.value });
                             }}
                         />
                         <InputError message={errors.name} />
@@ -164,10 +205,9 @@ const AddCompany = () => {
                             id="email"
                             placeholder="email@company.com"
                             className="w-full"
-                            value={form.email}
+                            value={data.email}
                             onChange={(e) => {
-                                // setData("email", e.target.value)
-                                setForm({ ...form, email: e.target.value });
+                                setData({ ...data, email: e.target.value });
                             }}
                         />
                         <InputError message={errors.email} />
@@ -182,14 +222,14 @@ const AddCompany = () => {
                                 name="postcode"
                                 placeholder="0000000"
                                 className="w-full"
-                                value={postcode.postcode}
+                                value={data.postcode}
                                 onChange={(e) => {
-                                    // setData("postcode", e.target.value);
-                                    setPostcode({ postcode: e.target.value });
-                                    setForm({
-                                        ...form,
+                                    setData({
+                                        ...data,
                                         postcode: e.target.value,
                                     });
+                                    // set the postcode payload to search the prefecture, city and local
+                                    setPostcode({ postcode: e.target.value });
                                 }}
                             />
                             <Button
@@ -212,11 +252,10 @@ const AddCompany = () => {
                         />
                         <Dropdown
                             id="prefecture_id"
-                            value={form.prefecture_id}
+                            value={data.prefecture_id}
                             options={prefectureOptions}
                             onChange={(e) => {
-                                // setData("prefecture_id", e.value)
-                                setForm({ ...form, prefecture_id: e.value });
+                                setData({ ...data, prefecture_id: e.value });
                             }}
                             placeholder="Select a prefecture"
                             className="w-full"
@@ -230,10 +269,9 @@ const AddCompany = () => {
                             id="city"
                             placeholder="City"
                             className="w-full"
-                            value={form.city}
+                            value={data.city}
                             onChange={(e) => {
-                                // setData("city", e.target.value);
-                                setForm({ ...form, city: e.target.value });
+                                setData({ ...data, city: e.target.value });
                             }}
                         />
                         <InputError message={errors.city} />
@@ -245,10 +283,9 @@ const AddCompany = () => {
                             id="local"
                             placeholder="Local"
                             className="w-full"
-                            value={form.local}
+                            value={data.local}
                             onChange={(e) => {
-                                // setData("local", e.target.value)
-                                setForm({ ...form, local: e.target.value });
+                                setData({ ...data, local: e.target.value });
                             }}
                         />
                         <InputError message={errors.local} />
@@ -263,12 +300,10 @@ const AddCompany = () => {
                             id="street_address"
                             placeholder="Street Address"
                             className="w-full"
-                            value={form.street_address}
+                            value={data.street_address}
                             onChange={(e) => {
-                                // setData("street_address", e.target.value);
-
-                                setForm({
-                                    ...form,
+                                setData({
+                                    ...data,
                                     street_address: e.target.value,
                                 });
                             }}
@@ -285,11 +320,10 @@ const AddCompany = () => {
                             id="business_hour"
                             placeholder="Business Hour"
                             className="w-full"
-                            value={form.business_hour}
+                            value={data.business_hour}
                             onChange={(e) => {
-                                // setData("business_hour", e.target.value)
-                                setForm({
-                                    ...form,
+                                setData({
+                                    ...data,
                                     business_hour: e.target.value,
                                 });
                             }}
@@ -306,11 +340,10 @@ const AddCompany = () => {
                             id="regular_holiday"
                             placeholder="Regular Holiday"
                             className="w-full border-gray-300 rounded-md shadow-sm"
-                            value={form.regular_holiday}
+                            value={data.regular_holiday}
                             onChange={(e) => {
-                                // setData("regular_holiday", e.target.value)
-                                setForm({
-                                    ...form,
+                                setData({
+                                    ...data,
                                     regular_holiday: e.target.value,
                                 });
                             }}
@@ -324,10 +357,9 @@ const AddCompany = () => {
                             id="phone"
                             placeholder="Phone Number"
                             className="w-full"
-                            value={form.phone}
+                            value={data.phone}
                             onChange={(e) => {
-                                // setData("phone", e.target.value);
-                                setForm({ ...form, phone: e.target.value });
+                                setData({ ...data, phone: e.target.value });
                             }}
                         />
                         <InputError message={errors.phone} />
@@ -339,10 +371,9 @@ const AddCompany = () => {
                             id="fax"
                             placeholder="Fax Number"
                             className="w-full"
-                            value={form.fax}
+                            value={data.fax}
                             onChange={(e) => {
-                                // setData("fax", e.target.value)
-                                setForm({ ...form, fax: e.target.value });
+                                setData({ ...data, fax: e.target.value });
                             }}
                         />
                         <InputError message={errors.fax} />
@@ -354,10 +385,9 @@ const AddCompany = () => {
                             id="url"
                             placeholder="Website URL"
                             className="w-full"
-                            value={form.url}
+                            value={data.url}
                             onChange={(e) => {
-                                // setData("url", e.target.value)
-                                setForm({ ...form, url: e.target.value });
+                                setData({ ...data, url: e.target.value });
                             }}
                         />
                         <InputError message={errors.url} />
@@ -372,11 +402,10 @@ const AddCompany = () => {
                             id="license_number"
                             placeholder="License Number"
                             className="w-full"
-                            value={form.license_number}
+                            value={data.license_number}
                             onChange={(e) => {
-                                // setData("license_number", e.target.value)
-                                setForm({
-                                    ...form,
+                                setData({
+                                    ...data,
                                     license_number: e.target.value,
                                 });
                             }}
@@ -391,8 +420,7 @@ const AddCompany = () => {
                             type="file"
                             className="w-full border-gray-300 rounded-md shadow-sm"
                             onChange={(e) => {
-                                // setData("image", e.target.files[0])
-                                setForm({ ...form, image: e.target.files[0] });
+                                setData({ ...data, image: e.target.files[0] });
                             }}
                         />
                         <InputError message={errors.image} />

@@ -1,31 +1,71 @@
 import PrimaryTable from "@/Components/PrimaryTable";
+import api from "@/config/api/api";
 import Layout from "@/Layouts/layout/layout";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 
 const Company = () => {
     const [currentPage, setCurrentPage] = useState(1);
+    const [companies, setCompanies] = useState();
+    const [loading, setLoading] = useState(false);
+    const [params, setParamss] = useState({
+        meta: {
+            per_page: 10,
+            page: 1,
+        },
+        search: "",
+    });
+
+    // Memoized search companies to prevent unnecessary recreations
+    const handleSearch = useCallback(async () => {
+        setLoading(true);
+
+        try {
+            // get the searched companies
+            const response = await api.get(route("company.index"), {
+                params: params,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            // set data companies if existed
+            if (response.data) {
+                const result = response.data;
+                setCompanies(result);
+            }
+
+            setLoading(false);
+        } catch (error) {
+            console.log("====================================");
+            console.log("ERROR GET COMPANIES ==> ", error);
+            console.log("====================================");
+            setLoading(false);
+        }
+    }, [params]);
+
+    console.log("====================================");
+    console.log("COMPANIES ---> ", companies);
+    console.log("====================================");
+
+    useEffect(() => {
+        handleSearch();
+    }, []);
 
     const columns = useMemo(
         () => [
             {
-                header: "Nama Anggota",
+                header: "Name",
                 cell: (info) => (
                     <div className="py-4 sm:pl-8 pr-3 text-sm font-medium text-gray-900">
-                        <div className="flex flex-row space-x-4 items-center">
-                            {/* <Image
-                                alt={info.row.original.user.fullName}
-                                src={
-                                    info.row.original.user.avatarUrl ??
-                                    Images.dummyProfile
-                                }
+                        <div className="flex flex-row space-x-2 items-center">
+                            <img
+                                src={`${info.row.original.image}`}
+                                alt={info.row.original.name}
                                 className="h-10 w-10 rounded-full bg-gray-50 object-cover"
-                                height={40}
-                                width={40}
-                                objectFit="cover"
                             />
                             <p className="font-bold">
-                                {info.row.original.user.fullName ?? "-"}
-                            </p> */}
+                                {info.row.original.name ?? "-"}
+                            </p>
                         </div>
                     </div>
                 ),
@@ -34,21 +74,21 @@ const Company = () => {
                 header: "Email",
                 cell: (info) => (
                     <div className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {/* {info.row.original.user.email ?? "-"} */}
+                        {info.row.original.email ?? "-"}
                     </div>
                 ),
             },
             {
-                header: "No.Hp",
+                header: "Phone",
                 cell: (info) => (
                     <div className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {/* {info.row.original.user.phoneNumber ?? "-"} */}
+                        {info.row.original.phone ?? "-"}
                     </div>
                 ),
             },
 
             {
-                header: "Aksi",
+                header: "Action",
                 cell: (info) => (
                     <div className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                         <div className="flex flex-row space-x-2">
@@ -105,7 +145,7 @@ const Company = () => {
                         </div>
                     }
                     columns={columns}
-                    data={[]}
+                    data={companies?.data ?? []}
                     isLoading={false}
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}

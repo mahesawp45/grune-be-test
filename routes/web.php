@@ -43,13 +43,14 @@ Route::middleware('auth')->group(function () {
     Route::controller(CompanyController::class)->group(function () {
         Route::get('/company', 'index')->name('company.index');
         Route::get('/add-company', 'create')->name('company.create');
+        Route::post('/store-company', 'store')->name('company.store');
         // Route::get('/customer-message/{id}', 'show')->name('show_message');
         // Route::put('/customer-message/{id}', 'reply')->name('reply_message');
         // Route::delete('/customer-message/{id}', 'destroy')->name('destroy_message');
     });
 
-    Route::get('/postcodes', [PostCodeController::class, 'search'])->name('search');
-    Route::get('/prefecture', [PrefectureController::class, 'getOneByName'])->name('getOneByName');
+    Route::get('/postcodes', [PostCodeController::class, 'search'])->name('searchPostCode');
+    Route::get('/prefecture', [PrefectureController::class, 'getOneByName'])->name('getOnePrefectureByName');
 });
 
 
