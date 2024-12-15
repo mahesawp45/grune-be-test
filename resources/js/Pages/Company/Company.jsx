@@ -62,26 +62,18 @@ const Company = () => {
         }
     };
 
-    const getItemProps = (index) => ({
-        className:
-            active === index
-                ? "relative z-10 flex items-center bg-gray-800 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer"
-                : "relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold text-black focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer",
-        onClick: () => {
-            setActive(index);
-
-            setParams({ ...params, meta: { page: index } });
-        },
-    });
-
-    const next = () => {
+    const numberClick = (index) => {
+        setActive(index);
+        setParams({ ...params, meta: { page: index } });
+    };
+    const nextClick = () => {
         if (active === companies?.pagination.last_page) return;
         setActive(active + 1);
 
         setParams({ ...params, meta: { page: active + 1 } });
     };
 
-    const prev = () => {
+    const prevClick = () => {
         if (active === 1) return;
         setActive(active - 1);
 
@@ -213,40 +205,12 @@ const Company = () => {
                     data={companies?.data ?? []}
                     totalPage={companies?.pagination?.last_page || 0}
                     limitPage={companies?.pagination?.per_page || 10}
+                    last={companies?.pagination?.last_page}
+                    onNumberClick={numberClick}
+                    onNext={nextClick}
+                    onPrev={prevClick}
+                    active={active}
                 />
-                {/* Pagination Controls */}
-                <div className="w-full my-4">
-                    <nav
-                        className="isolate inline-flex -space-x-px rounded-md shadow-sm w-full align-self-center"
-                        aria-label="Pagination"
-                    >
-                        <a
-                            onClick={prev}
-                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
-                        >
-                            <span className="sr-only">Previous</span>
-                        </a>
-                        {Array.from(
-                            { length: companies?.pagination?.last_page ?? 0 },
-                            (_, index) => (
-                                <a
-                                    key={index + 1}
-                                    aria-current="page"
-                                    {...getItemProps(index + 1)}
-                                >
-                                    {index + 1}
-                                </a>
-                            )
-                        )}
-
-                        <a
-                            onClick={next}
-                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
-                        >
-                            <span className="sr-only">Next</span>
-                        </a>
-                    </nav>
-                </div>
             </div>
         </Layout>
     );

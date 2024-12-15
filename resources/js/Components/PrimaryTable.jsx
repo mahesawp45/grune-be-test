@@ -15,6 +15,11 @@ const PrimaryTable = ({
     isLoading,
     className,
     filters,
+    last,
+    onNumberClick,
+    onPrev,
+    onNext,
+    active,
 }) => {
     const table = useReactTable({
         columns,
@@ -26,6 +31,16 @@ const PrimaryTable = ({
             pagination: {
                 pageSize: 10, // Set default page size
             },
+        },
+    });
+
+    const getItemProps = (index) => ({
+        className:
+            active === index
+                ? "relative z-10 flex items-center bg-gray-800 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer"
+                : "relative z-10 inline-flex items-center  px-4 py-2 text-sm font-semibold text-black focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-800 cursor-pointer",
+        onClick: () => {
+            onNumberClick(index);
         },
     });
 
@@ -117,6 +132,37 @@ const PrimaryTable = ({
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="w-full p-4">
+                <nav
+                    className="isolate inline-flex -space-x-px rounded-md shadow-sm w-full"
+                    aria-label="Pagination"
+                >
+                    <a
+                        onClick={onPrev}
+                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
+                    >
+                        <span className="sr-only">Previous</span>
+                    </a>
+                    {Array.from({ length: last ?? 0 }, (_, index) => (
+                        <a
+                            key={index + 1}
+                            aria-current="page"
+                            {...getItemProps(index + 1)}
+                        >
+                            {index + 1}
+                        </a>
+                    ))}
+
+                    <a
+                        onClick={onNext}
+                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 cursor-pointer"
+                    >
+                        <span className="sr-only">Next</span>
+                    </a>
+                </nav>
             </div>
         </div>
     );

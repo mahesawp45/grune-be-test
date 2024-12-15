@@ -60,7 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/edit-company', 'edit')->name('company.edit');
 
         // update company
-        Route::patch('/update-company/{id}', 'update')->name('company.update');
+        Route::post('/update-company/{id}', 'update')->name('company.update');
 
         // delete company
         Route::delete('/delete-company/{id}', 'destroy')->name('company.destroy');

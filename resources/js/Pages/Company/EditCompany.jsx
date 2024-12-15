@@ -28,8 +28,8 @@ const EditCompany = () => {
             const response = await fetch(url);
             const blob = await response.blob();
 
-            // Create a File object
-            return new File([blob], filename, {
+            // Create a File object with its extention type
+            return new File([blob], `${filename}.${url.split(".")[1]}`, {
                 type: blob.type,
             });
         } catch (error) {
@@ -38,7 +38,7 @@ const EditCompany = () => {
         }
     };
 
-    const { data, setData, errors, post, patch, reset, processing } = useForm({
+    const { data, setData, errors, post, reset, processing } = useForm({
         name: company.name,
         email: company.email,
         postcode: company.postcode,
@@ -52,10 +52,11 @@ const EditCompany = () => {
         fax: company.fax,
         url: company.url,
         license_number: company.license_number,
-        image: null,
+        image: company.image,
     });
 
     const init = async () => {
+        // set the initial data form
         setData({
             name: company.name,
             email: company.email,
@@ -70,13 +71,13 @@ const EditCompany = () => {
             fax: company.fax,
             url: company.url,
             license_number: company.license_number,
-            image: await urlToFile(company.image, `image_${company.id}`),
+            image: await urlToFile(company.image, `image_${company.id}`), // convert image url to file
         });
     };
 
     useEffect(() => {
         init();
-    }, [company, prefecture]);
+    }, []);
 
     // Memoized search postcodes to prevent unnecessary recreations
     const handleSearch = useCallback(
@@ -205,43 +206,25 @@ const EditCompany = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log("====================================");
-        console.log("aowkowa ===> ", data);
-        console.log("====================================");
-
-        try {
-            await api.patch(
-                route("company.update", {
-                    id: company.id,
-                }),
-                data
-            );
-
-            reset();
-        } catch (error) {
-            console.log("====================================");
-            console.log("ERROR EDIT COMPANY --> ", error.response.data.errors);
-            console.log("====================================");
-        }
-
-        // patch(
-        //     route("company.update", {
-        //         id: company.id,
-        //     }),
-        //     {
-        //         preserveScroll: true,
-        //         data: data,
-        //         method: "patch",
-        //         onSuccess: () => {
-        //             reset();
-        //         },
-        //         onError: (e) => {
-        //             console.log("====================================");
-        //             console.log("ERROR EDIT COMPANY --> ", e);
-        //             console.log("====================================");
-        //         },
-        //     }
-        // );
+        // used the post method from inertia because the patch/put method doesn't work well
+        post(
+            route("company.update", {
+                id: company.id,
+            }),
+            {
+                preserveScroll: true,
+                data: data,
+                method: "patch",
+                onSuccess: () => {
+                    reset();
+                },
+                onError: (e) => {
+                    console.log("====================================");
+                    console.log("ERROR EDIT COMPANY --> ", e);
+                    console.log("====================================");
+                },
+            }
+        );
     };
 
     return (

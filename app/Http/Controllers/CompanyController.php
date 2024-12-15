@@ -18,12 +18,14 @@ class CompanyController extends Controller
      */
     public function index(Request $request)
     {
+
         $meta = $request->input('meta', ['per_page' => 10, 'page' => 1]);
         $searchTerm = $request->input('search');
 
         $companiesQuery = Company::query();
 
         if ($searchTerm) {
+            // Use the query builder function to perform query using wild card for searching mechanism
             $companiesQuery->where(function ($query) use ($searchTerm) {
                 $query->where('name', 'like', "%{$searchTerm}%")
                     ->orWhere('email', 'like', "%{$searchTerm}%")
@@ -33,7 +35,7 @@ class CompanyController extends Controller
 
         $companies = $companiesQuery->paginate(
             $meta['per_page'] ?? 10,
-            ['*'],
+            ['id', 'name', 'phone', 'email', 'image'], // select column that necessary so the query would be faster
             'page',
             $meta['page'] ?? 1
         );
@@ -42,9 +44,7 @@ class CompanyController extends Controller
 
         // Map the data to include full image URLs for files stored in public/storage
         $companiesData = array_map(function ($company) {
-            $company['image'] = $company['image']
-                ? Storage::url($company['image']) // Generate correct URL for storage files
-                : asset('images/default.png');    // Use a fallback if the image doesn't exist
+            $company['image'] = Storage::url($company['image']);
             return $company;
         }, $companiesData);
 
@@ -121,9 +121,7 @@ class CompanyController extends Controller
 
         try {
             $company = Company::findOrFail($request->id);
-            $company['image'] = $company['image']
-                ? Storage::url($company['image']) // Generate correct URL for storage files
-                : asset('images/default.png');
+            $company['image'] = Storage::url($company['image']);
 
             $prefecture = Prefecture::where('id', $company->prefecture_id)->first();
 
@@ -140,9 +138,7 @@ class CompanyController extends Controller
     {
         try {
             $company = Company::findOrFail($request->id);
-            $company['image'] = $company['image']
-                ? Storage::url($company['image']) // Generate correct URL for storage files
-                : asset('images/default.png');
+            $company['image'] = Storage::url($company['image']);
 
             $prefecture = Prefecture::where('id', $company->prefecture_id)->first();
 
@@ -158,13 +154,11 @@ class CompanyController extends Controller
     public function update(CompanyRequest $request, $id)
     {
 
-        dd([$id, $request]);
-
         try {
-            // Find the company
+
             $company = Company::findOrFail($id);
 
-            // Prepare the data for update
+
             $validatedData = $request->validated();
 
             // Remove null values to perform a partial update
@@ -172,7 +166,7 @@ class CompanyController extends Controller
                 return $value !== null;
             });
 
-            // Update company details
+
             $company->update($validatedData);
 
             // Handle image upload if present
